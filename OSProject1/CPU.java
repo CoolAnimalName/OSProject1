@@ -25,18 +25,18 @@ public class CPU {
       pw.flush();
       pc++;
 
-			loop: while(sc.hasNextLine()) {
-				ir = Integer.parseInt(sc.nextLine());
+      loop: while(sc.hasNextLine()) {
+        ir = Integer.parseInt(sc.nextLine());
         //System.out.println(ir);
         //System.out.println("pc = " + pc);
-				switch(ir) {
-					case 1: //Load value
+        switch(ir) {
+          case 1: //Load value
             pw.println(pc);
             pw.flush();
             ac = Integer.parseInt(sc.nextLine());
             pc++;
-						break;
-					case 2: //Load addr
+            break;
+          case 2: //Load addr
             pw.println(pc);
             pw.flush();
             ac = Integer.parseInt(sc.nextLine());
@@ -44,26 +44,26 @@ public class CPU {
             pw.flush();
             ac = Integer.parseInt(sc.nextLine());
             pc++;
-						break;
-					case 3: //LoadInd addr
+            break;
+          case 3: //LoadInd addr
             pw.println(pc);
             pw.flush();
-            ac= Integer.parseInt(sc.nextLine());
+            ac = Integer.parseInt(sc.nextLine());
             pw.println(ac); //gets the value at the address
             pw.flush();
             ac = Integer.parseInt(sc.nextLine());
             pc++;
-						break;
-					case 4: //LoadIdx X addr
+            break;
+          case 4: //LoadIdx X addr
             pw.println(pc);
             pw.flush();
-            ac= Integer.parseInt(sc.nextLine());
+            ac = Integer.parseInt(sc.nextLine());
             pw.println(ac + x); //gets the value at the address
             pw.flush();
             ac = Integer.parseInt(sc.nextLine());
             pc++;
-						break;
-					case 5: //LoadIdx Y addr
+            break;
+          case 5: //LoadIdx Y addr
             pw.println(pc);
             pw.flush();
             ac= Integer.parseInt(sc.nextLine());
@@ -71,15 +71,19 @@ public class CPU {
             pw.flush();
             ac = Integer.parseInt(sc.nextLine());
             pc++;
-						break;
-					case 6: //LoadSp X
-						break;
-					case 7: //Store addr
-						break;
-					case 8: //Get
+            break;
+          case 6: //LoadSp X
+            pw.println(sp + x);
+            pw.flush();
+            ac= Integer.parseInt(sc.nextLine());
+            pc++;
+            break;
+          case 7: //Store addr
+            break;
+          case 8: //Get
             Random r = new Random();
             ac = r.nextInt(100) + 1;
-						break;
+            break;
           case 9: //Put port
             pw.println(pc);
             pw.flush();

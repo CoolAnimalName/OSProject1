@@ -13,11 +13,12 @@ public class Memory {
       Scanner fetch = new Scanner(System.in);
       int i =0, j =0;
       while(scan.hasNextInt()) {
-        mem[i++] = scan.nextInt();
-        scan.nextLine(); //ignore the comments
+          mem[i++] = scan.nextInt();
+          scan.nextLine(); //ignore the comments
       } //end while
 
       while(fetch.hasNext()) {
+      //for(j=0; j<i;j++){
         j = fetch.nextInt();
         System.out.println(mem[j]);
       }
