@@ -11,9 +11,21 @@ public class Memory {
     try {
       Scanner scan = new Scanner(inputFile);
       Scanner fetch = new Scanner(System.in);
+      String parse = null;
       int i =0, j =0;
-      while(scan.hasNextInt()) {
+      while(scan.hasNext()) {
+        if(scan.hasNextInt()) {
           mem[i++] = scan.nextInt();
+        }
+        else {
+          parse = scan.next();
+          if(parse.equals("//"))
+            scan.nextLine();
+          else if(parse.charAt(0) == '.')
+            i = Integer.parseInt(parse.substring(1));
+          else
+            scan.nextLine(); //skips \n
+        }
           scan.nextLine(); //ignore the comments
       } //end while
 
