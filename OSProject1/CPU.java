@@ -64,6 +64,13 @@ public class CPU {
             pc++;
 						break;
 					case 5: //LoadIdx Y addr
+            pw.println(pc);
+            pw.flush();
+            ac= Integer.parseInt(sc.nextLine());
+            pw.println(ac + y); //gets the value at the address
+            pw.flush();
+            ac = Integer.parseInt(sc.nextLine());
+            pc++;
 						break;
 					case 6: //LoadSp X
 						break;
@@ -78,9 +85,9 @@ public class CPU {
             pw.flush();
             int port = Integer.parseInt(sc.nextLine());
             if(port == 1)
-              System.out.println(ac);
+              System.out.print(ac);
             else if(port == 2)
-              System.out.println((char) ac);
+              System.out.print((char) ac);
             pc++;
             break;
           case 10: //AddX
@@ -155,6 +162,8 @@ public class CPU {
           case 30: //IRet
             break;
           case 50: //End
+            pw.println(-1);
+            pw.flush();
             break loop;
           default:
             System.out.println("ERROR! Cannot compute");
