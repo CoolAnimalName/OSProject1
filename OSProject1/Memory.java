@@ -16,7 +16,7 @@ public class Memory {
       while(scan.hasNext()) {
         if(scan.hasNextInt()) {
           mem[i++] = scan.nextInt();
-        }
+        } //end if
         else {
           parse = scan.next();
           if(parse.equals("//"))
@@ -25,13 +25,15 @@ public class Memory {
             i = Integer.parseInt(parse.substring(1));
           else
             scan.nextLine(); //skips \n
-        }
+        } //end else
           scan.nextLine(); //ignore the comments
       } //end while
 
       while(fetch.hasNext()) {
       //for(j=0; j<i;j++){
         j = fetch.nextInt();
+        if(j == -1)
+          break;
         System.out.println(mem[j]);
       }
     } //end try
