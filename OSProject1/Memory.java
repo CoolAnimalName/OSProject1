@@ -29,11 +29,11 @@ public class Memory {
           scan.nextLine(); //ignore the comments
       } //end while
 
-      while(fetch.hasNext()) {
-      //for(j=0; j<i;j++){
-        j = fetch.nextInt();
-        if(j == -1)
-          break;
+      //while(fetch.hasNext()) {
+      for(j=0; j<i;j++){
+        //j = fetch.nextInt();
+        //if(j == -1)
+          //break;
         System.out.println(mem[j]);
       }
     } //end try
