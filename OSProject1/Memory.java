@@ -1,16 +1,16 @@
 /******************************************************************************
-Matthew Villarreal (miv140130)
-CS 4348.002
-Project 1
+* Matthew Villarreal (miv140130)
+* CS 4348.002
+* Project 1
 *******************************************************************************
 *******************************************************************************
-                                    Memory.java
-
-This program initialized the memory based on the file input, parses commands
-received from CPU.java, then executes a read or write operation based on the
-type of command received. A read operation prints the data from a specified
-memory address back to the CPU, and a write request overwrites a specified
-memory address with the data received.
+*                                   Memory.java
+*
+* This program initialized the memory based on the file input, parses commands
+* received from CPU.java, then executes a read or write operation based on the
+* type of command received. A read operation prints the data from a specified
+* memory address back to the CPU, and a write request overwrites a specified
+* memory address with the data received.
 ******************************************************************************/
 
 import java.io.*;

@@ -1,3 +1,18 @@
+/******************************************************************************
+* Matthew Villarreal (miv140130)
+* CS 4348.002
+* Project 1
+*******************************************************************************
+*******************************************************************************
+*                                   CPU.java
+*
+* This program initialized the memory based on the file input, parses commands
+* received from CPU.java, then executes a read or write operation based on the
+* type of command received. A read operation prints the data from a specified
+* memory address back to the CPU, and a write request overwrites a specified
+* memory address with the data received.
+******************************************************************************/
+
 import java.io.*;
 import java.lang.Runtime;
 import java.util.Scanner;
@@ -5,391 +20,331 @@ import java.util.Random;
 
 public class CPU {
 
+  //global constants
+  static int USTACK = 1000;
+  static int SYSSTACK = 2000;
 
-  private static int PC = 0;
-  private static int SP = 1000;
-  private static int IR = 0;
-  private static int AC = 0;
-  private static int X = 0;
-  private static int Y = 0;
-  private static int timer = 0;
-  private static int topOfUserStack = 1000;
-  private static int topOfSystemStack = 2000;
-  private static int numInstructions = 0;
+  static int pc = 0, sp = 1000, ir = 0, ac = 0, x = 0, y = 0; //CPU registers
 
-  private static String filename;
-  private static OutputStream out;
-  private static PrintWriter printW;
-  private static InputStream in;
+  static int numInstructions = 0;
 
-  private static boolean interrupt = false;
-  private static boolean UKmode = true;        //usermode = true, kernalmode = false
+  static OutputStream os;
+  static PrintWriter pw;
+  static InputStream is;
 
-  public static void main(String args[])
-  {
-    int instruction = 0;
+  static boolean interrupt = false;
+  static boolean mode = true;        //usermode = true, kernalmode = false
 
-    //*********************************************
-    //              GET ARGUMENTS                 *
-    //*********************************************
 
+  public static void main(String args[]) {
+    int timer = 0;
     // Validates if the correct number of arguments is 2
     if(args.length == 2)
-    {
-      filename = args[0];
       timer = Integer.parseInt(args[1]);
-    }
-    else
-    {  // If number of arguments is not 2, then exit with error.
-      System.out.println("ERROR: Need only two parameters.");
+    else {  // If number of arguments is not 2, then exit with error.
+      System.out.println("ERROR: format is CPU <inputFile> <number>");
       System.exit(0);
-    }
+    } //end else
 
-    //*********************************************
-    //           CREATE PROCESS                   *
-    //*********************************************
+    try {
+      Runtime rt = Runtime.getRuntime();
+      Process proc = rt.exec("java Memory " + args[0]);
+      os = proc.getOutputStream();
+      pw = new PrintWriter(os);
+      is = proc.getInputStream();
+      Scanner memory = new Scanner(is);
 
-    try{
-
-      // Start creating child process
-      Runtime runtime = Runtime.getRuntime();
-      Process process = runtime.exec("java Memory " + args[0]);
-      out = process.getOutputStream();
-      printW = new PrintWriter(out);
-      in = process.getInputStream();
-      Scanner memory = new Scanner(in);
-
-      while(true)
-      {
+      while(true) {
         // If a timer interrupt has occured
-        if(interrupt == false && numInstructions > 0 && (numInstructions % timer) == 0)
-        {
+        if(interrupt == false && numInstructions > 0 && (numInstructions % timer) == 0) {
           interrupt = true;
-          UKmode = false;
-          int tempData;
-
-          tempData = SP;
-          SP = topOfSystemStack;
-          push(in, out, printW, tempData);
-          tempData = PC;
-          PC = 1000;
-          push(in, out, printW, tempData);
-        }
+          mode = false;
+          int tempData = sp;
+          sp = SYSSTACK;
+          push(is, os, pw, tempData);
+          tempData = pc;
+          pc = 1000;
+          push(is, os, pw, tempData);
+        } //end if
 
         // Starts reading in the instructions from memory
-        instruction = readMemory(memory, in, out, printW, PC);
+        ir = readMem(memory, is, os, pw, pc);
 
-        // Test if instructions are correct
-        //System.out.println(instruction);
-
-
-        if(instruction != -1)
-        {
-          runIntruction(memory, in, out, printW, instruction);
-          //System.out.println(numInstructions);
-
-        }
+        if(ir != -1)
+          runIntruction(memory, is, os, pw, ir);
         else
           break;
-
-      }
+      } //end while
 
       // Need it to output this, but it's not...
       //System.out.println("debug 6: Line 93");
-      process.waitFor();
-      int exitValue = process.exitValue();
+      proc.waitFor();
+      int exitValue = proc.exitValue();
       System.out.println("Process exited: " + exitValue);
-    }
-    catch(IOException e)
-    {
+    } //end try
+    catch(IOException e) {
       e.printStackTrace();
-    }
-    catch(InterruptedException e)
-    {
+    } //end catch
+    catch(InterruptedException e) {
       e.printStackTrace();
-    }
+    } //end catch
   }// end main
 
-  //*********************************************
-  //                 METHODS                    *
-  //*********************************************
+  private static int readMem(Scanner memory, InputStream is, OutputStream os, PrintWriter pw, int address) {
 
-  // readMemory:    Reads data from Memory at given addresses
-  private static int readMemory(Scanner memory, InputStream in, OutputStream out, PrintWriter printW, int address)
-  {
-    String tempString = null;
-    //System.out.println("address: " + address);
-
-    // Address validation: If usermode is tryng to access the system address
-    if(UKmode)
-    {
-      if(address >= 1000 || address < 0)
-      {
+    if(mode) { //checks to make sure user is not accessing system stack
+      if(address >= 1000 || address < 0) { //user mem address is 0-999
         System.out.println("Error: User cannot access system stack.");
         System.exit(0);
-      }
-    }
+      } //end  nested if
+    } //end if
 
-    printW.printf("0," + address + "\n");
-    printW.flush();
+    pw.printf("0," + address + "\n");
+    pw.flush();
 
-    if(memory.hasNext())
-    {
+    String tempString = null;
+    if(memory.hasNext()) {
       tempString = memory.next();
-      if(!tempString.isEmpty())
-      {
+
+      if(!tempString.isEmpty()) {
         int tempInt = Integer.parseInt(tempString);
         return(tempInt);
-      }
-    }
+      } //end nested if
+    } //end if
     return -1;
-  }
+  } //end readMem
 
-  private static void writeMemory(InputStream in, OutputStream out, PrintWriter printW, int address, int value)
-  {
-    printW.printf("1," + address + "," + value + "\n");
-    printW.flush();
-  }
-  private static int pop(Scanner memory, InputStream in, OutputStream out, PrintWriter printW)
-  {
-    int instruction = readMemory(memory, in, out, printW, SP);
-    writeMemory(in, out, printW, SP, 0);
-    SP++;
-    return instruction;
-  }
+  private static void writeMem(InputStream is, OutputStream os, PrintWriter pw, int address, int value) {
+    pw.printf("1," + address + "," + value + "\n");
+    pw.flush();
+  } //end writeMem
 
-  private static void push(InputStream in, OutputStream out, PrintWriter printW, int data)
-  {
-    SP--;
-    writeMemory(in, out, printW, SP, data);
-  }
+  private static int pop(Scanner memory, InputStream is, OutputStream os, PrintWriter pw) {
+    ir = readMem(memory, is, os, pw, sp);
+    writeMem(is, os, pw, sp, 0);
+    sp++;
+    return ir;
+  } //end pop
 
-  private static void addInstruction()
-  {
+  private static void push(InputStream is, OutputStream os, PrintWriter pw, int data) {
+    sp--;
+    writeMem(is, os, pw, sp, data);
+  } //end push
+
+  private static void addInstruction(){
     if(interrupt == false)
       numInstructions++;
-  }
+  } //end addInstruction
 
-  private static void runIntruction(Scanner memory, InputStream in, OutputStream out, PrintWriter printW, int instruction)
-  {
-    IR = instruction;
+  private static void runIntruction(Scanner memory, InputStream is, OutputStream os, PrintWriter pw, int ir) {
     int data;
 
-    switch(IR)
-    {
-      case 1: //  Load value:      Load value into the AC
-        PC++;
-        data = readMemory(memory, in, out, printW, PC);
-        AC = data;
+    switch(ir) {
+      case 1: //  Load value:      Load value into the ac
+        pc++;
+        data = readMem(memory, is, os, pw, pc);
+        ac = data;
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 2:  //  Load addr:      Load value at the address into AC
-        PC++;
-        data = readMemory(memory, in, out, printW, PC);
-        AC = readMemory(memory, in, out, printW, data);
+      case 2:  //  Load addr:      Load value at the address into ac
+        pc++;
+        data = readMem(memory, is, os, pw, pc);
+        ac = readMem(memory, is, os, pw, data);
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 3:  //  LoadInd addr:   Load value from address found in the given address into the AC
-        PC++;
-        data = readMemory(memory, in, out, printW, PC);
-        data = readMemory(memory, in, out, printW, data);
-        AC = readMemory(memory, in, out, printW, data);
+      case 3:  //  LoadInd addr:   Load value from address found in the given address into the ac
+        pc++;
+        data = readMem(memory, is, os, pw, pc);
+        data = readMem(memory, is, os, pw, data);
+        ac = readMem(memory, is, os, pw, data);
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 4:  //  LoadIdxX addr:  Load the value at (address + X) into AC
-        PC++;
-        data = readMemory(memory, in, out, printW, PC);
-        AC = readMemory(memory, in, out, printW, data + X);
+      case 4:  //  LoadIdxx addr:  Load the value at (address + x) into ac
+        pc++;
+        data = readMem(memory, is, os, pw, pc);
+        ac = readMem(memory, is, os, pw, data + x);
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 5:  //  LoadIdxY addr:  Load the value at(address + Y) into AC
-        PC++;
-        data = readMemory(memory, in, out, printW, PC);
-        AC = readMemory(memory, in, out, printW, data + Y);
+      case 5:  //  LoadIdxy addr:  Load the value at(address + y) into ac
+        pc++;
+        data = readMem(memory, is, os, pw, pc);
+        ac = readMem(memory, is, os, pw, data + y);
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 6:  //  LoadSpX:        Load from (SP + X) into the AC
-        //(if SP is 990, and X is 1, load from 991).
-        AC = readMemory(memory, in, out, printW, SP + X);
+      case 6:  //  Loadspx:        Load from (sp + x) into the ac
+        ac = readMem(memory, is, os, pw, sp + x);
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 7:  //  Store Addr:     Store value into AC into the address
-        PC++;
-        data = readMemory(memory, in, out, printW, PC);
-        writeMemory(in, out, printW, data, AC);
+      case 7:  //  Store Addr:     Store value into ac into the address
+        pc++;
+        data = readMem(memory, is, os, pw, pc);
+        writeMem(is, os, pw, data, ac);
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 8:  //  Get:            Gets a random int from 1 to 100 and put into AC
+      case 8:  //  Get:            Gets a random int from 1 to 100 and put into ac
         Random intRandom = new Random();
         int tempInt = intRandom.nextInt(100) + 1;
-        AC = tempInt;
+        ac = tempInt;
         addInstruction();
-        PC++;
+        pc++;
         break;
       case 9:  //  Put port:       Put into the port depending what data is
-        PC++;
-        data = readMemory(memory, in, out, printW, PC);
+        pc++;
+        data = readMem(memory, is, os, pw, pc);
 
-
-        if(data == 1)                   // If port = 1, writes to AC as an Int
-        {
-          System.out.print(AC);
+        if(data == 1) {
+          System.out.print(ac);
           addInstruction();
-          PC++;
+          pc++;
           break;
-        }
-        else if(data == 2)              // Else if, writes to AC as a char
-        {
-          System.out.print((char)AC);
+        } //end if
+        else if(data == 2) {
+          System.out.print((char)ac);
           addInstruction();
-          PC++;
+          pc++;
           break;
-        }
-        else                            // Else, there was an error at the port
-        {
-          System.out.println("ERROR: Port: " + data);
+        } //end else if
+        else {
+          System.out.println("ERROR: port cannot be: " + data);
           addInstruction();
-          PC++;
+          pc++;
           System.exit(0);
           break;
-        }
-      case 10:  //  AddX:        Add X to the AC
-        AC = AC + X;
+        } //end else
+      case 10:  //  Addx:        Add x to the ac
+        ac = ac + x;
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 11:  //  AddY:        Add Y to the AC
-        AC = AC + Y;
+      case 11:  //  Addy:        Add y to the ac
+        ac = ac + y;
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 12:  //  SubX:        Subtract the value of X from the AC
-        AC = AC - X;
+      case 12:  //  Subx:        Subtract the value of x from the ac
+        ac = ac - x;
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 13:  //  SubY:        Subtract the value of Y from the AC
-        AC = AC - Y;
+      case 13:  //  Suby:        Subtract the value of y from the ac
+        ac = ac - y;
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 14:  //  CopyToX:     Copy the value in the AC to X
-        X = AC;
+      case 14:  //  CopyTox:     Copy the value in the ac to x
+        x = ac;
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 15:  //  CopyFromX:   Copy value in the AC to X
-        AC = X;
+      case 15:  //  CopyFromx:   Copy value in the ac to x
+        ac = x;
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 16:  //  CopyToY:     Copy the value in the AC to Y
-        Y = AC;
+      case 16:  //  CopyToy:     Copy the value in the ac to y
+        y = ac;
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 17:  //  CopyFromY:   Copy value in the Y to AC
-        AC = Y;
+      case 17:  //  CopyFromy:   Copy value in the y to ac
+        ac = y;
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 18:  //  CopyToSP:    Copy the value in AC to SP
-        SP = AC;
+      case 18:  //  CopyTosp:    Copy the value in ac to sp
+        sp = ac;
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 19:  //  CopyFromSP:  Copy the value in SP to AC
-        AC = SP;
+      case 19:  //  CopyFromsp:  Copy the value in sp to ac
+        ac = sp;
         addInstruction();
-        PC++;
+        pc++;
         break;
       case 20:  //  Jump addr:   Jump to the address
-        PC++;
-        data = readMemory(memory, in, out, printW, PC);
-        PC = data;
+        pc++;
+        data = readMem(memory, is, os, pw, pc);
+        pc = data;
         addInstruction();
         break;
-      case 21:  //  JumpIfEqual addr:  Jump to address only if value in the AC = 0
-        PC++;
-        data = readMemory(memory, in, out, printW, PC);
-        if(AC ==0)
-        {
-          PC = data;
+      case 21:  //  JumpIfEqual addr:  Jump to address only if value in the ac = 0
+        pc++;
+        data = readMem(memory, is, os, pw, pc);
+        if(ac ==0) {
+          pc = data;
           addInstruction();
           break;
-        }
+        } //end if
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 22:  //  JumpIfNotEqual addr:  Jump to address only if value in the AC != 0
-        PC++;
-        data = readMemory(memory, in, out, printW, PC);
-        if(AC != 0)
-        {
-          PC = data;
+      case 22:  //  JumpIfNotEqual addr:  Jump to address only if value in the ac != 0
+        pc++;
+        data = readMem(memory, is, os, pw, pc);
+        if(ac != 0) {
+          pc = data;
           addInstruction();
           break;
-        }
+        } //end if
         addInstruction();
-        PC++;
+        pc++;
         break;
       case 23:  //  Call addr:            Push return address onto stack, then jump to the address
-        PC++;
-        data = readMemory(memory, in, out, printW, PC);
-        push(in, out, printW, PC + 1);
-        topOfUserStack = SP;
-        PC = data;
+        pc++;
+        data = readMem(memory, is, os, pw, pc);
+        push(is, os, pw, pc + 1);
+        USTACK = sp;
+        pc = data;
         addInstruction();
         break;
       case 24:  //  Ret:   Pop the return address from the stack, then jump to the address
-        data = pop(memory, in, out, printW);
-        PC = data;
+        data = pop(memory, is, os, pw);
+        pc = data;
         addInstruction();
         break;
-      case 25:  //  IncX:   Increment X
-        X++;
+      case 25:  //  Incx:   Increment x
+        x++;
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 26:  //  DecX:   Decrement X
-        X--;
+      case 26:  //  Decx:   Decrement x
+        x--;
         addInstruction();
-        PC++;
+        pc++;
         break;
-      case 27:  //  Push:   Push AC onto stack
-        push(in, out, printW, AC);
-        PC++;
+      case 27:  //  Push:   Push ac onto stack
+        push(is, os, pw, ac);
+        pc++;
         addInstruction();
         break;
-      case 28:  //  Pop:    Pop from stack into AC
-        AC = pop(memory, in, out, printW);
-        PC++;
+      case 28:  //  Pop:    Pop from stack into ac
+        ac = pop(memory, is, os, pw);
+        pc++;
         addInstruction();
         break;
       case 29:  //  Int:    Perform system call
-        data = SP;
-        SP = 2000;
+        data = sp;
+        sp = 2000;
         interrupt = true;
-        UKmode = false;
-        push(in, out, printW, data);
+        mode = false;
+        push(is, os, pw, data);
 
-        data = PC + 1;
-        PC = 1500;
-        push(in, out, printW, data);
+        data = pc + 1;
+        pc = 1500;
+        push(is, os, pw, data);
         addInstruction();
-
         break;
-      case 30:  //  IRet:   Return from system call
-        PC = pop(memory, in, out, printW);
-        SP = pop(memory, in, out, printW);
-        UKmode = true;
+      case 30:  //  iret:   Return from system call
+        pc = pop(memory, is, os, pw);
+        sp = pop(memory, is, os, pw);
+        mode = true;
         numInstructions++;
         interrupt = false;
         break;
@@ -401,8 +356,6 @@ public class CPU {
         System.out.println("ERROR: Invalid Instruction...");
         System.exit(0);
         break;
-
-    }
-  }
-
-} // ends class
+    } //end switch
+  } //end runIntruction
+} // end CPU
