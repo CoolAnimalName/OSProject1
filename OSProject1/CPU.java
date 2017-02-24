@@ -130,7 +130,7 @@ public class CPU {
       }
     }
 
-    printW.printf("1," + address + "\n");
+    printW.printf("0," + address + "\n");
     printW.flush();
 
     if(memory.hasNext())
@@ -147,7 +147,7 @@ public class CPU {
 
   private static void writeMemory(InputStream in, OutputStream out, PrintWriter printW, int address, int value)
   {
-    printW.printf("2," + address + "," + value + "\n");
+    printW.printf("1," + address + "," + value + "\n");
     printW.flush();
   }
   private static int pop(Scanner memory, InputStream in, OutputStream out, PrintWriter printW)

@@ -1,78 +1,79 @@
+/******************************************************************************
+Matthew Villarreal (miv140130)
+CS 4348.002
+Project 1
+*******************************************************************************
+*******************************************************************************
+                                    Memory.java
+
+This program initialized the memory based on the file input, parses commands
+received from CPU.java, then executes a read or write operation based on the
+type of command received. A read operation prints the data from a specified
+memory address back to the CPU, and a write request overwrites a specified
+memory address with the data received.
+******************************************************************************/
+
 import java.io.*;
 import java.util.Scanner;
 
 public class Memory {
 
-
   public static void main (String args[]) {
-    Scanner request = new Scanner(System.in);    // Used to read input from the request
-    Scanner input = null;
-    File inputFile = new File(args[0]);
-    int currentNum = 0;    // Will contain number from file
-    String currentString;  // Will contain a String for comments or '.'
-    String line;           // Will contain the line for the request scanner
-    int address;           // Stores the addresss for write method
-    int val;               // Stores value for the write method
-    int num;               // Will contain the int value of the strings for the request scanner
-    int[] mem = new int[2000];    // Used to store memory
+    File inputFile = new File(args[0]); //gets file from CPU exec call
+    int[] mem = new int[2000]; //memory initalization
 
+    if(!inputFile.exists()) { //checks to make sure the init file is valid
+      System.out.println("Cannot find file.");
+      System.exit(0);
+    } //end nested if
 
+    try {
+      Scanner opScan = new Scanner(System.in); //received commands from CPU.java
+      Scanner scanIn = new Scanner(inputFile); //reads from the inputFile
+      String parse; //needed to ignore comments and change loading location
+      int i = 0; //index for mem
 
-        if(!inputFile.exists()) {
-          System.out.println("Cannot find file.");
-          System.exit(0);
-        } //end nested if
+      while(scanIn.hasNext()) { //reads from file into mem
+        if(scanIn.hasNextInt())
+          mem[i++] = scanIn.nextInt(); //loads int value at i then incements i
+        else {
+          parse = scanIn.next();
 
-      try {
-
-        input = new Scanner(inputFile);
-        int i = 0;
-        while(input.hasNext()) {
-          // Store int into memory
-          if(input.hasNextInt()) {
-            currentNum = input.nextInt();
-            mem[i++] = currentNum;
-          } //end if
-          else {
-            currentString = input.next();
-
-            if(currentString.equals("//"))
-              input.nextLine();
-            else if(currentString.charAt(0) == '.')
-              i = Integer.parseInt(currentString.substring(1));
-            else
-              input.nextLine();
+          if(parse.equals("//")) //all comments begin with //
+            scanIn.nextLine(); //skip comments and go to next line
+          else if(parse.charAt(0) == '.') //next int is a address change request
+            i = Integer.parseInt(parse.substring(1));
+          else
+            scanIn.nextLine(); //get next line
           } //end else
+        } //end while
+
+        while(true) { //runs until CPU stops sending commands or error
+          if(opScan.hasNext()) {
+            String request = opScan.nextLine();
+
+            if(!(request.isEmpty())) {
+              String[] tokens = request.split(",");
+
+              if(tokens[0].equals("0")) { //read request
+                int j = Integer.parseInt(tokens[1]); //j is a temp to help clean up the println
+                System.out.println(mem[j]);
+              } //end nested if
+              else { //write request since if not 0 it is 1
+                i = Integer.parseInt(tokens[1]);
+                mem[i] = Integer.parseInt(tokens[2]);
+              } //end nested else
+            } //end if
+            else //request was an empty string
+              break;
+          } //end if
+          else //no more commands sent from CPU
+            break;
         } //end while
       } //end try
       catch(FileNotFoundException e) {
         e.printStackTrace();
       } //end catch
 
-      while(true) {
-        if(request.hasNext()) {
-          line = request.nextLine();
-          if(!(line.isEmpty())) {
-
-            String [] tokens = line.split(",");
-
-            if(tokens[0].equals("1")) { //read request
-              num = Integer.parseInt(tokens[1]);
-              System.out.println(mem[num]);
-            } //end nested if
-            else { //write request since if not 1 it is 2
-              address = Integer.parseInt(tokens[1]);
-              val = Integer.parseInt(tokens[2]);
-              mem[address] = val;
-            } //end nested else
-          } //end if
-          else
-            break;
-        } //end if
-        else
-          break;
-      } //end while
-    
   } // end main
-
 } // end Memory
