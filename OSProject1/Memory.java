@@ -7,7 +7,7 @@ public class Memory {
   public static void main (String args[]) {
     Scanner request = new Scanner(System.in);    // Used to read input from the request
     Scanner input = null;
-    File inputFile = null;
+    File inputFile = new File(args[0]);
     int currentNum = 0;    // Will contain number from file
     String currentString;  // Will contain a String for comments or '.'
     String line;           // Will contain the line for the request scanner
@@ -17,18 +17,14 @@ public class Memory {
     int[] mem = new int[2000];    // Used to store memory
 
 
-    try {
-      if(request.hasNextLine()) {
-        inputFile = new File(request.nextLine());
 
-        // Input Validation: If there is no file, then close.
         if(!inputFile.exists()) {
           System.out.println("Cannot find file.");
           System.exit(0);
         } //end nested if
-      } //end if
 
       try {
+
         input = new Scanner(inputFile);
         int i = 0;
         while(input.hasNext()) {
@@ -76,10 +72,7 @@ public class Memory {
         else
           break;
       } //end while
-    } //end try
-    catch(NumberFormatException e ) {
-      e.printStackTrace();
-    } //end catch
+    
   } // end main
 
 } // end Memory

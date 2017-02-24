@@ -53,15 +53,11 @@ public class CPU {
 
       // Start creating child process
       Runtime runtime = Runtime.getRuntime();
-      Process process = runtime.exec("java Memory");
+      Process process = runtime.exec("java Memory " + args[0]);
       out = process.getOutputStream();
       printW = new PrintWriter(out);
       in = process.getInputStream();
       Scanner memory = new Scanner(in);
-
-      // This sends the filename to memory
-      printW.printf(filename + "\n");
-      printW.flush();
 
       while(true)
       {
