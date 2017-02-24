@@ -1,144 +1,85 @@
-// INPUT: java CPU sample.txt 30
-
 import java.io.*;
 import java.util.Scanner;
 
-public class Memory
-{
-  private static int [] mem = new int[2000];    // Used to store memory
-
-  public static void main (String args[])
-  {
-    Scanner CPU = new Scanner(System.in);    // Used to read input from the CPU
-    File infile = null;                      // Used for filename
-    Scanner input = null;                    // Used to go through file
+public class Memory {
 
 
+  public static void main (String args[]) {
+    Scanner request = new Scanner(System.in);    // Used to read input from the request
+    Scanner input = null;
+    File inputFile = null;
     int currentNum = 0;    // Will contain number from file
-    int index = 0;         // Will contain element number of memory array
     String currentString;  // Will contain a String for comments or '.'
-    String line;           // Will contain the line for the CPU scanner
+    String line;           // Will contain the line for the request scanner
     int address;           // Stores the addresss for write method
     int val;               // Stores value for the write method
-    int num;               // Will contain the int value of the strings for the CPU scanner
+    int num;               // Will contain the int value of the strings for the request scanner
+    int[] mem = new int[2000];    // Used to store memory
 
-    //**********************************************
-    //                  GET FILE                   *
-    //**********************************************
-    try
-    {
-      if(CPU.hasNextLine())
-      {
-        infile = new File(CPU.nextLine());
+
+    try {
+      if(request.hasNextLine()) {
+        inputFile = new File(request.nextLine());
 
         // Input Validation: If there is no file, then close.
-        if(!(infile.exists()))
-        {
+        if(!inputFile.exists()) {
           System.out.println("Cannot find file.");
           System.exit(0);
-        }
-      }
+        } //end nested if
+      } //end if
 
-      //**********************************************
-      //            READ FILE CONTENT                *
-      //**********************************************
-      try
-      {
-        input = new Scanner(infile);
-
-        while(input.hasNext())
-        {
+      try {
+        input = new Scanner(inputFile);
+        int i = 0;
+        while(input.hasNext()) {
           // Store int into memory
-          if(input.hasNextInt())
-          {
+          if(input.hasNextInt()) {
             currentNum = input.nextInt();
-            mem[index] = currentNum;
-            index++;
-          }
-          else
-          {
+            mem[i++] = currentNum;
+          } //end if
+          else {
             currentString = input.next();
 
-
             if(currentString.equals("//"))
-            {
-              // Skip line if the line is a comment
               input.nextLine();
-            }
             else if(currentString.charAt(0) == '.')
-            {
-              // Get value if there is a '.' in the front
-              index = Integer.parseInt(currentString.substring(1));
-            }
+              i = Integer.parseInt(currentString.substring(1));
             else
               input.nextLine();
-          }
-        }
-      }
-      catch(FileNotFoundException e)
-      {
+          } //end else
+        } //end while
+      } //end try
+      catch(FileNotFoundException e) {
         e.printStackTrace();
-      }
-      //*********************************************
-      //          EXECUTE READ AND WRITES           *
-      //*********************************************
+      } //end catch
 
-      // Read instructions and execute
-      // by the CPU read or write functions requested
-      while(true)
-      {
-        if(CPU.hasNext())
-        {
-          line = CPU.nextLine();
-          if(!(line.isEmpty()))
-          {
-            // Testing to see if getting stuff out of file
-            //System.out.println(line);
+      while(true) {
+        if(request.hasNext()) {
+          line = request.nextLine();
+          if(!(line.isEmpty())) {
 
-            // Parses through CPU
             String [] tokens = line.split(",");
 
-            // A 1 means the CPU wants to read
-            // Else, a 2 means the CPU wants to write
-            if(tokens[0].equals("1"))
-            {
+            if(tokens[0].equals("1")) { //read request
               num = Integer.parseInt(tokens[1]);
-              System.out.println(read(num));
-            }
-            else
-            {
+              System.out.println(mem[num]);
+            } //end nested if
+            else { //write request since if not 1 it is 2
               address = Integer.parseInt(tokens[1]);
               val = Integer.parseInt(tokens[2]);
-              write(address, val);
-            }
-          }
+              mem[address] = val;
+            } //end nested else
+          } //end if
           else
             break;
-        }
+        } //end if
         else
           break;
-      }
-
-    }
-    catch(NumberFormatException e )
-    {
+      } //end while
+    } //end try
+    catch(NumberFormatException e ) {
       e.printStackTrace();
-    }
-
+    } //end catch
   } // end main
 
-  //*********************************************
-  //                 METHODS                    *
-  //*********************************************
-
-  public static int read(int address)
-  {
-    return mem[address];
-  }
-  public static void write(int address, int value)
-  {
-    mem[address] = value;
-  }
-
-
-} // end class
+} // end Memory

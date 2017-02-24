@@ -1,5 +1,7 @@
 import java.io.*;
-import java.util.*;
+import java.lang.Runtime;
+import java.util.Scanner;
+import java.util.Random;
 
 public class CPU {
 
