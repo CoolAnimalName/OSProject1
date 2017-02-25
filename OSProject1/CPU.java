@@ -20,6 +20,7 @@ import java.util.Random;
 
 public class CPU {
 
+<<<<<<< HEAD
   //global constants
   static int USTACK = 1000;
   static int SYSSTACK = 2000;
@@ -27,6 +28,15 @@ public class CPU {
   //static OutputStream os;
   //static PrintWriter fetchPW;
   //static InputStream is;
+=======
+  //global variables for method simplicity
+  static int pc = 0, sp = 1000, ir = 0, ac = 0, x = 0, y = 0; //CPU registers
+
+  static int instrNum = 0; //number of instructions done before timer
+
+  static boolean interrupt = false;
+  static boolean mode = true;        //user: true, kernal: false
+>>>>>>> edit
 
   //static boolean mode = true;        //user: true, kernal: false
 
@@ -60,7 +70,7 @@ public class CPU {
           interrupt = true;
           mode = false;
           int tempData = sp;
-          sp = SYSSTACK;
+          sp = 2000; //sp changed to location of system stack
           push(is, os, fetchPW, tempData);
           tempData = pc;
           pc = 1000;
@@ -241,7 +251,6 @@ public class CPU {
         break;
       case 23:  //  Call addr:            Push return addr onto stack, then jump to the addr
         push(is, os, fetchPW, pc + 1);
-        USTACK = sp;
         pc = readMem(memory, is, os, fetchPW, pc);
         break;
       case 24:  //  Ret:   Pop the return addr from the stack, then jump to the addr
