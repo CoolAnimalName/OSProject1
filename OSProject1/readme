@@ -1,0 +1,23 @@
+Matthew Villarreal
+miv140130
+CS 4348.002
+
+Project 1
+
+Files:
+        CPU.java
+        Memory.java
+        sample5.txt
+        Makefile
+        OSProject1_miv140130.docx
+
+Compile:
+        To compile, simply run the Makefile by entering "make" in the command line.
+
+Run:
+        Once inside the project directory, enter into the command line:
+
+            java CPU <inputFile> <#>
+
+        Where inputFile is the name of the sample file you wish to run, and
+        # is the timer frequency as a positive integer.
