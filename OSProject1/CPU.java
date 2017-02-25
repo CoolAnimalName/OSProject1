@@ -20,19 +20,11 @@ import java.util.Random;
 
 public class CPU {
 
-  //global constants
+  //global variables for method simplicity
   static int USTACK = 1000;
   static int SYSSTACK = 2000;
 
   static int pc = 0, sp = 1000, ir = 0, ac = 0, x = 0, y = 0; //CPU registers
-
-  static int instrNum = 0; //number of instructions done before timer
-
-  //static OutputStream os;
-  //static PrintWriter fetchPW;
-  static InputStream is;
-
-  static boolean interrupt = false;
   static boolean mode = true;        //user: true, kernal: false
 
 
@@ -51,8 +43,11 @@ public class CPU {
       Process proc = rt.exec("java Memory " + args[0]);
       OutputStream os = proc.getOutputStream();
       PrintWriter fetchPW = new PrintWriter(os);
-      is = proc.getInputStream();
+      InputStream is = proc.getInputStream();
       Scanner memory = new Scanner(is);
+
+      int instrNum = 0;
+      boolean interrupt = false;
 
       while(true) {
         // If a timer interrupt has occured
@@ -70,8 +65,10 @@ public class CPU {
         // Starts reading in the instructions from memory
         ir = readMem(memory, is, os, fetchPW, pc);
 
-        if(ir != -1)
-          executeInstr(memory, is, os, fetchPW, ir);
+        if(ir != -1) {
+          executeInstr(memory, is, os, fetchPW, ir, interrupt);
+          instrIncrement(instrNum, interrupt);
+        }
         else
           break;
       } //end while
@@ -131,12 +128,12 @@ public class CPU {
     return ir;
   } //end pop
 
-  private static void instrIncrement(){
+  private static void instrIncrement(int instrNum, boolean interrupt){
     if(interrupt == false) //only increment time to interrupt if there is no current interupt
       instrNum++;
   } //end instrIncrement
 
-  private static void executeInstr(Scanner memory, InputStream is, OutputStream os, PrintWriter fetchPW, int ir) {
+  private static void executeInstr(Scanner memory, InputStream is, OutputStream os, PrintWriter fetchPW, int ir, boolean interrupt) {
     int temp;
     pc++;
 
@@ -277,7 +274,6 @@ public class CPU {
         interrupt = false;
         break;
       case 50:  //  End:    End the execution
-        instrIncrement();
         System.exit(0);
         break;
       default:
@@ -285,6 +281,5 @@ public class CPU {
         System.exit(0);
         break;
     } //end switch
-    instrIncrement();
   } //end executeInstr
 } // end CPU
