@@ -6,11 +6,12 @@
 *******************************************************************************
 *                                   CPU.java
 *
-* This program initialized the memory based on the file input, parses commands
-* received from CPU.java, then executes a read or write operation based on the
-* type of command received. A read operation prints the temp from a specified
-* memory addr back to the CPU, and a write request overwrites a specified
-* memory addr with the temp received.
+* This program runs Memory.java and reads in commands found in Memory.java's
+* memory array. It fetches the command into the ir register, then executes the
+* correct intructions that correspond to that command. It also contains an
+* interrupt handler that can be invoked by an instuction or the timer. This
+* switches the mode from user to kernal, saves the sp and pc registers to the
+* system stack, and switches the sp to the system stack.
 ******************************************************************************/
 
 import java.io.*;
@@ -20,60 +21,59 @@ import java.util.Random;
 
 public class CPU {
 
-  //global variables for method simplicity
-  static int pc = 0, sp = 1000, ir = 0, ac = 0, x = 0, y = 0; //CPU registers
-
-  static int instrNum = 0; //number of instructions done before timer
-
-  static boolean interrupt = false;
-  static boolean mode = true;        //user: true, kernal: false
-
+  /*****************************************************************************
+  *   GLOBAL VARIBLES FOR METHOD HEADER SIMPLICITY
+  ******************************************************************************/
+  private static int pc = 0, sp = 1000, ir = 0, ac = 0, x = 0, y = 0; //CPU registers
+  private static boolean interrupt = false;  //interrupt handles
+  private static boolean mode = true;        //true for user, false for kernal
 
   public static void main(String args[]) {
-    int timer = 0;
+    int timer = 0; //stores value of timer
 
     if(args.length == 2) //checks for correct command line format
       timer = Integer.parseInt(args[1]);
-    else {  // If number of arguments is not 2, then exit with error.
+    else {  //exit with error if command line does not get 2 args
       System.out.println("ERROR: format is CPU <inputFile> <number>");
       System.exit(0);
     } //end else
 
-    try {
+    try { //CPU execution
       Runtime rt = Runtime.getRuntime();
-      Process proc = rt.exec("java Memory " + args[0]);
+      Process proc = rt.exec("java Memory " + args[0]); //runs Memory.java
       OutputStream os = proc.getOutputStream();
       PrintWriter fetchPW = new PrintWriter(os);
       InputStream is = proc.getInputStream();
       Scanner memory = new Scanner(is);
 
+      int instrNum = 0; //number of instructions done before timer
+
       while(true) {
-        // If a timer interrupt has occured
-        if(interrupt == false && instrNum > 0 && (instrNum % timer) == 0) {
+
+        if(interrupt == false && instrNum > 0 && (instrNum % timer) == 0) { //timer interrupt occurs
           interrupt = true;
-          mode = false;
+          mode = false; //changes to kernal mode
           int tempData = sp;
           sp = 2000; //sp changed to location of system stack
-          push(is, os, fetchPW, tempData);
+          push(is, os, fetchPW, tempData); //pushes sp onto stack
           tempData = pc;
-          pc = 1000;
-          push(is, os, fetchPW, tempData);
+          pc = 1000; //pc changed to location of system instructions in memory
+          push(is, os, fetchPW, tempData); //pushes pc onto stack
         } //end if
 
-        // Starts reading in the instructions from memory
-        ir = readMem(memory, is, os, fetchPW, pc);
+        ir = readMem(memory, is, os, fetchPW, pc); //first read from mem
 
-        if(ir != -1)
+        if(ir != -1) { //valid instruction
           executeInstr(memory, is, os, fetchPW, ir);
+          if(interrupt == false) //only increment time to interrupt if there is no current interupt
+            instrNum++;
+        } //end if
         else
           break;
       } //end while
 
-      // Need it to output this, but it's not...
-      //System.out.println("debug 6: Line 93");
-      proc.waitFor();
+      proc.waitFor(); //waits for Memory.java to finish executing
       int exitValue = proc.exitValue();
-      System.out.println("Process exited: " + exitValue);
     } //end try
     catch(IOException e) {
       e.printStackTrace();
@@ -83,6 +83,12 @@ public class CPU {
     } //end catch
   }// end main
 
+  /*****************************************************************************
+  * readMem(5)
+  * Reads from memory array in Memory.java and returns instruction found at addr.
+  * If it tries to access the system stack but in user mode, it will return an
+  * error.
+  ******************************************************************************/
   private static int readMem(Scanner memory, InputStream is, OutputStream os, PrintWriter fetchPW, int addr) {
 
     if(mode) { //checks to make sure user is not accessing system stack
@@ -92,14 +98,14 @@ public class CPU {
       } //end  nested if
     } //end if
 
-    fetchPW.printf("0," + addr + "\n");
+    fetchPW.printf("0," + addr + "\n"); //sends request to Memory
     fetchPW.flush();
 
-    String tempString = null;
+    String tempString = null; //holds next instruction
     if(memory.hasNext()) {
       tempString = memory.next();
 
-      if(!tempString.isEmpty()) {
+      if(!tempString.isEmpty()) { //tempString has a command
         int tempInt = Integer.parseInt(tempString);
         return(tempInt);
       } //end nested if
@@ -107,16 +113,30 @@ public class CPU {
     return -1;
   } //end readMem
 
+  /*****************************************************************************
+  * writeMem(5)
+  * Sends a write request to put data at address addr in memory
+  ******************************************************************************/
   private static void writeMem(InputStream is, OutputStream os, PrintWriter fetchPW, int addr, int data) {
     fetchPW.printf("1," + addr + "," + data + "\n");
     fetchPW.flush();
   } //end writeMem
 
+  /*****************************************************************************
+  * push(4)
+  * Pushes the value of data onto the stack. Which stack it pushes on depends
+  * on the if the system is user mode or kernal mode
+  ******************************************************************************/
   private static void push(InputStream is, OutputStream os, PrintWriter fetchPW, int data) {
     sp--;
     writeMem(is, os, fetchPW, sp, data);
   } //end push
 
+  /*****************************************************************************
+  * pop(4)
+  * Pops and returns the top value off the stack. Which stack it pops from
+  * depends on if the system is in user or kernal mode.
+  ******************************************************************************/
   private static int pop(Scanner memory, InputStream is, OutputStream os, PrintWriter fetchPW) {
     ir = readMem(memory, is, os, fetchPW, sp);
     writeMem(is, os, fetchPW, sp, 0); //zero to reset mem address
@@ -124,159 +144,157 @@ public class CPU {
     return ir;
   } //end pop
 
-  private static void instrIncrement(){
-    if(interrupt == false) //only increment time to interrupt if there is no current interupt
-      instrNum++;
-  } //end instrIncrement
-
+  /*****************************************************************************
+  * executeInstr(5)
+  * This method takes the instruction value in the ir register, and finds the
+  * correct set of code for that instuction and executes it.
+  ******************************************************************************/
   private static void executeInstr(Scanner memory, InputStream is, OutputStream os, PrintWriter fetchPW, int ir) {
-    int temp;
+    int temp; //for any swapping or saving register operations
     pc++;
 
     switch(ir) {
-      case 1: //  Load value:      Load value into the ac
-        ac = readMem(memory, is, os, fetchPW, pc);
+      case 1: //Load value
+        ac = readMem(memory, is, os, fetchPW, pc); //load into ac
         pc++;
         break;
-      case 2:  //  Load addr:      Load value at the addr into ac
+      case 2:  //Load addr
         temp = readMem(memory, is, os, fetchPW, pc);
-        ac = readMem(memory, is, os, fetchPW, temp);
+        ac = readMem(memory, is, os, fetchPW, temp); //load into ac
         pc++;
         break;
-      case 3:  //  LoadInd addr:   Load value from addr found in the given addr into the ac
+      case 3:  //LoadInd addr
         temp = readMem(memory, is, os, fetchPW, pc);
         temp = readMem(memory, is, os, fetchPW, temp);
-        ac = readMem(memory, is, os, fetchPW, temp);
+        ac = readMem(memory, is, os, fetchPW, temp); //load into ac
         pc++;
         break;
-      case 4:  //  LoadIdxx addr:  Load the value at (addr + x) into ac
+      case 4:  //LoadIdxx addr
         temp = readMem(memory, is, os, fetchPW, pc);
-        ac = readMem(memory, is, os, fetchPW, temp + x);
+        ac = readMem(memory, is, os, fetchPW, temp + x); //load into ac
         pc++;
         break;
-      case 5:  //  LoadIdxy addr:  Load the value at(addr + y) into ac
+      case 5:  //LoadIdxy addr
         temp = readMem(memory, is, os, fetchPW, pc);
-        ac = readMem(memory, is, os, fetchPW, temp + y);
+        ac = readMem(memory, is, os, fetchPW, temp + y); //load into ac
         pc++;
         break;
-      case 6:  //  Loadspx:        Load from (sp + x) into the ac
-        ac = readMem(memory, is, os, fetchPW, sp + x);
+      case 6:  //Loadspx
+        ac = readMem(memory, is, os, fetchPW, sp + x); //load into ac
         break;
-      case 7:  //  Store Addr:     Store value into ac into the addr
+      case 7:  //Store Addr
         temp = readMem(memory, is, os, fetchPW, pc);
-        writeMem(is, os, fetchPW, temp, ac);
+        writeMem(is, os, fetchPW, temp, ac); //store ac in memory at address temp
         pc++;
         break;
-      case 8:  //  Get:            Gets a random int from 1 to 100 and put into ac
+      case 8:  //Get
         Random rand = new Random();
         int tempInt = rand.nextInt(100) + 1;
         ac = tempInt;
         break;
-      case 9:  //  Put port:       Put into the port depending what temp is
+      case 9:  //Put port
         int port = readMem(memory, is, os, fetchPW, pc);
 
-        if(port == 1)
+        if(port == 1) //print as integer
           System.out.print(ac);
-        else if(port == 2)
+        else if(port == 2) //print as character
           System.out.print((char)ac);
-        else {
+        else { //incorect value
           System.out.println("ERROR: port cannot be: " + port);
           System.exit(0);
         } //end else
         pc++;
         break;
-      case 10:  //  Addx:        Add x to the ac
+      case 10:  //AddX
         ac +=  x;
         break;
-      case 11:  //  Addy:        Add y to the ac
+      case 11:  //AddY
         ac += y;
         break;
-      case 12:  //  Subx:        Subtract the value of x from the ac
+      case 12:  //SubX
         ac -= x;
         break;
-      case 13:  //  Suby:        Subtract the value of y from the ac
+      case 13:  //SubY
         ac -= y;
         break;
-      case 14:  //  CopyTox:     Copy the value in the ac to x
+      case 14:  //CopyToX
         x = ac;
         break;
-      case 15:  //  CopyFromx:   Copy value in the ac to x
+      case 15:  //CopyFromX
         ac = x;
         break;
-      case 16:  //  CopyToy:     Copy the value in the ac to y
+      case 16:  //CopyToY
         y = ac;
         break;
-      case 17:  //  CopyFromy:   Copy value in the y to ac
+      case 17:  //CopyFromY
         ac = y;
         break;
-      case 18:  //  CopyTosp:    Copy the value in ac to sp
+      case 18:  //CopyToSp
         sp = ac;
         break;
-      case 19:  //  CopyFromsp:  Copy the value in sp to ac
+      case 19:  //CopyFromSp
         ac = sp;
         break;
-      case 20:  //  Jump addr:   Jump to the addr
+      case 20:  //Jump addr
         pc = readMem(memory, is, os, fetchPW, pc);
         break;
-      case 21:  //  JumpIfEqual addr:  Jump to addr only if value in the ac = 0
-        if(ac ==0) {
+      case 21:  //JumpIfEqual addr
+        if(ac ==0) { //only jumps when equal
           pc = readMem(memory, is, os, fetchPW, pc);
           break;
         } //end if
         pc++;
         break;
-      case 22:  //  JumpIfNotEqual addr:  Jump to addr only if value in the ac != 0
-        if(ac != 0) {
+      case 22:  //JumpIfNotEqual addr
+        if(ac != 0) { //only jumps if not equal
           pc = readMem(memory, is, os, fetchPW, pc);
           break;
         } //end if
         pc++;
         break;
-      case 23:  //  Call addr:            Push return addr onto stack, then jump to the addr
-        push(is, os, fetchPW, pc + 1);
-        pc = readMem(memory, is, os, fetchPW, pc);
+      case 23:  //Call addr
+        push(is, os, fetchPW, pc + 1); //pushes next instruction address onto stack
+        pc = readMem(memory, is, os, fetchPW, pc); //jumps
         break;
-      case 24:  //  Ret:   Pop the return addr from the stack, then jump to the addr
-        pc = pop(memory, is, os, fetchPW);
+      case 24:  //Ret
+        pc = pop(memory, is, os, fetchPW); //pc stores return address
         break;
-      case 25:  //  Incx:   Increment x
+      case 25:  //IncX
         x++;
         break;
-      case 26:  //  Decx:   Decrement x
+      case 26:  //DecX
         x--;
         break;
-      case 27:  //  Push:   Push ac onto stack
-        push(is, os, fetchPW, ac);
+      case 27:  //Push
+        push(is, os, fetchPW, ac); //pushes ac onto stack
         break;
-      case 28:  //  Pop:    Pop from stack into ac
-        ac = pop(memory, is, os, fetchPW);
+      case 28:  //Pop
+        ac = pop(memory, is, os, fetchPW); //pops from stack to ac
         break;
-      case 29:  //  Int:    Perform system call
+      case 29:  //Int
         temp = sp;
-        sp = 2000;
-        interrupt = true;
-        mode = false;
-        push(is, os, fetchPW, temp);
+        sp = 2000; //sp points to system stack
+        interrupt = true; //interrupt has occured
+        mode = false; //kernal mode
+        push(is, os, fetchPW, temp); //pushes sp onto stack
 
         temp = pc;
         pc = 1500;
-        push(is, os, fetchPW, temp);
+        push(is, os, fetchPW, temp); //pushes pc onto stack
         break;
-      case 30:  //  iret:   Return from system call
-        pc = pop(memory, is, os, fetchPW);
-        sp = pop(memory, is, os, fetchPW);
-        mode = true;
-        interrupt = false;
+      case 30:  //IRet
+        pc = pop(memory, is, os, fetchPW); //gets return address
+        sp = pop(memory, is, os, fetchPW); //gets return sp
+        mode = true; //user mode
+        interrupt = false; //interrupt has been handled
         break;
-      case 50:  //  End:    End the execution
-        instrIncrement();
+      case 50:  //End
         System.exit(0);
         break;
-      default:
+      default: //invalid instruction
         System.out.println("ERROR: " + ir + " Not a valid instruction");
         System.exit(0);
         break;
     } //end switch
-    instrIncrement();
   } //end executeInstr
 } // end CPU
