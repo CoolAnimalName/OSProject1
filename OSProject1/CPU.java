@@ -208,19 +208,19 @@ public class CPU {
           break;
         } //end else
       case 10:  //  Addx:        Add x to the ac
-        ac = ac + x;
+        ac +=  x;
         pc++;
         break;
       case 11:  //  Addy:        Add y to the ac
-        ac = ac + y;
+        ac += y;
         pc++;
         break;
       case 12:  //  Subx:        Subtract the value of x from the ac
-        ac = ac - x;
+        ac -= x;
         pc++;
         break;
       case 13:  //  Suby:        Subtract the value of y from the ac
-        ac = ac - y;
+        ac -= y;
         pc++;
         break;
       case 14:  //  CopyTox:     Copy the value in the ac to x
@@ -314,7 +314,7 @@ public class CPU {
         System.exit(0);
         break;
       default:
-        System.out.println("ERROR: Invalid Instruction...");
+        System.out.println("ERROR: " + ir + " Not a valid instruction");
         System.exit(0);
         break;
     } //end switch
