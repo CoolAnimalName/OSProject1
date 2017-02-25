@@ -24,17 +24,11 @@ public class CPU {
   static int USTACK = 1000;
   static int SYSSTACK = 2000;
 
-  static int pc = 0, sp = 1000, ir = 0, ac = 0, x = 0, y = 0; //CPU registers
-
-  static int instrNum = 0; //number of instructions done before timer
-
   //static OutputStream os;
   //static PrintWriter fetchPW;
-  static InputStream is;
+  //static InputStream is;
 
-  static boolean interrupt = false;
-  static boolean mode = true;        //user: true, kernal: false
-
+  //static boolean mode = true;        //user: true, kernal: false
 
   public static void main(String args[]) {
     int timer = 0;
@@ -51,8 +45,14 @@ public class CPU {
       Process proc = rt.exec("java Memory " + args[0]);
       OutputStream os = proc.getOutputStream();
       PrintWriter fetchPW = new PrintWriter(os);
-      is = proc.getInputStream();
+      InputStream is = proc.getInputStream();
       Scanner memory = new Scanner(is);
+
+      int instrNum = 0; //number of instructions done before timer
+      boolean interrupt = false;
+      boolean mode = true;
+
+      int pc = 0, sp = 1000, ir = 0, ac = 0, x = 0, y = 0; //CPU registers
 
       while(true) {
         // If a timer interrupt has occured
@@ -71,7 +71,7 @@ public class CPU {
         ir = readMem(memory, is, os, fetchPW, pc);
 
         if(ir != -1)
-          executeInstr(memory, is, os, fetchPW, ir);
+          executeInstr(memory, is, os, fetchPW, pc, ir, ac, x, y, mode, instrNum, interrupt);
         else
           break;
       } //end while
@@ -90,7 +90,7 @@ public class CPU {
     } //end catch
   }// end main
 
-  private static int readMem(Scanner memory, InputStream is, OutputStream os, PrintWriter fetchPW, int addr) {
+  private static int readMem(Scanner memory, InputStream is, OutputStream os, PrintWriter fetchPW, int addr, boolean mode) {
 
     if(mode) { //checks to make sure user is not accessing system stack
       if(addr >= 1000 || addr < 0) { //user mem addr is 0-999
@@ -119,24 +119,24 @@ public class CPU {
     fetchPW.flush();
   } //end writeMem
 
-  private static void push(InputStream is, OutputStream os, PrintWriter fetchPW, int data) {
+  private static void push(InputStream is, OutputStream os, PrintWriter fetchPW, int sp, int data) {
     sp--;
     writeMem(is, os, fetchPW, sp, data);
   } //end push
 
-  private static int pop(Scanner memory, InputStream is, OutputStream os, PrintWriter fetchPW) {
-    ir = readMem(memory, is, os, fetchPW, sp);
+  private static int pop(Scanner memory, InputStream is, OutputStream os, PrintWriter fetchPW, int ir, int sp, boolean mode) {
+    ir = readMem(memory, is, os, fetchPW, sp, mode );
     writeMem(is, os, fetchPW, sp, 0); //zero to reset mem address
     sp++;
     return ir;
   } //end pop
 
-  private static void instrIncrement(){
+  private static void instrIncrement(int instrNum, boolean interrupt){
     if(interrupt == false) //only increment time to interrupt if there is no current interupt
       instrNum++;
   } //end instrIncrement
 
-  private static void executeInstr(Scanner memory, InputStream is, OutputStream os, PrintWriter fetchPW, int ir) {
+  private static void executeInstr(Scanner memory, InputStream is, OutputStream os, PrintWriter fetchPW, int pc, int ir, int ac, int x, int y, boolean mode, int instrNum, boolean interrupt) {
     int temp;
     pc++;
 
@@ -277,7 +277,7 @@ public class CPU {
         interrupt = false;
         break;
       case 50:  //  End:    End the execution
-        instrIncrement();
+        instrIncrement(instrNum, interrupt);
         System.exit(0);
         break;
       default:
@@ -285,6 +285,6 @@ public class CPU {
         System.exit(0);
         break;
     } //end switch
-    instrIncrement();
+    instrIncrement(instrNum, interrupt);
   } //end executeInstr
 } // end CPU
