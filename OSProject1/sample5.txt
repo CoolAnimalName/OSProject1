@@ -1,47 +1,53 @@
-8   // Get
-14  // CopyToX
-16  // CopyToY
-9   // Put port
+1   //load
+20
+14  //CopyToX
+1   //load
 1
-26  // DecX
-15  // CopyFromX
-21  // JumpIfEqual 24
+9   //put
+1
+16  //CopyToY
+1   //load
 32
-    // summation subroutine
-17  // CopyFromY
-10  // AddX
-16  // CopyToY
-1   // LoadInd addr
+9   //put
+2
+26  //DecX
+15  //CopyFromX
+22  //JumpIfNotEqual
+17
+50  //End
+    //subroutine
+2   //loadfromaddress
+54
+11  //AddY
+9   //put
+1
+7   //store
+54
+1   //load
 32
-9   // Put port
+9   //put
 2
-1   // LoadInd addr
-43  // "+"
-9   // Put port
-2
-1   // LoadInd addr
+26  //DecX
+15  //CopyFromX
+21  //JumpIfEqual
+16
+2   //loadfromaddress
+54
+11  //AddY
+9   //put
+1
+16  //CopyToY
+1   //load
 32
-9   // Put port
+9   //put
 2
-15  // CopyFromX
-9   // Put port
-1
-20  // Jump addr 5
-5
-
-    // results subroutine
-1   // LoadInd addr
-61  // "="
-9   // Put port
-2
-17  // CopyFromY
-9   // Put port
-1
-1
-10
-9   // Put port
-2
-50  // End
+20  //Jump
+12
 
 .1000
 30
+
+
+
+
+1

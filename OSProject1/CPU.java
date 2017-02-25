@@ -169,12 +169,12 @@ public class CPU {
         ac = readMem(memory, is, os, fetchPW, temp); //load into ac
         pc++;
         break;
-      case 4:  //LoadIdxx addr
+      case 4:  //LoadIdxX addr
         temp = readMem(memory, is, os, fetchPW, pc);
         ac = readMem(memory, is, os, fetchPW, temp + x); //load into ac
         pc++;
         break;
-      case 5:  //LoadIdxy addr
+      case 5:  //LoadIdxY addr
         temp = readMem(memory, is, os, fetchPW, pc);
         ac = readMem(memory, is, os, fetchPW, temp + y); //load into ac
         pc++;
