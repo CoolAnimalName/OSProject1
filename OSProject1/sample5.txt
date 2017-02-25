@@ -1,53 +1,56 @@
-1   //load
+1   //Load 20
 20
 14  //CopyToX
-1   //load
+1   //Load 1
 1
-9   //put
+9   //Put 1
 1
 16  //CopyToY
-1   //load
+1   //Load 32
 32
-9   //put
+9   //Put 2
 2
 26  //DecX
 15  //CopyFromX
-22  //JumpIfNotEqual
-17
+22  //JumpIfNotEqual 21
+21
+1
+10
+9
+2
 50  //End
-    //subroutine
-2   //loadfromaddress
-54
+
+    //Next Fibonacci numbers
+2   //Load addr 52
+52
 11  //AddY
-9   //put
+9   //Put 1
 1
-7   //store
-54
-1   //load
+7   //Store 52
+52
+1   //Load 32
 32
-9   //put
+9   //Put 2
 2
 26  //DecX
 15  //CopyFromX
-21  //JumpIfEqual
+21  //JumpIfEqual 16
 16
-2   //loadfromaddress
-54
+2   //Load addr 52
+52
 11  //AddY
-9   //put
+9   //Put 9
 1
 16  //CopyToY
-1   //load
+1   //Load 32
 32
-9   //put
+9   //Put 2
 2
 20  //Jump
 12
 
+
+1 //extra storage
+
 .1000
 30
-
-
-
-
-1

@@ -52,16 +52,16 @@ public class Memory {
           if(opScan.hasNext()) {
             String request = opScan.nextLine();
 
-            if(!(request.isEmpty())) {
-              String[] tokens = request.split(",");
+            if(!(request.isEmpty())) { //request holds an instruction from CPU
+              String[] vals = request.split(",");
 
-              if(tokens[0].equals("0")) { //read request
-                int j = Integer.parseInt(tokens[1]); //j is a temp to help clean up the println
+              if(vals[0].equals("0")) { //read request
+                int j = Integer.parseInt(vals[1]); //j is a temp to help clean up the println
                 System.out.println(mem[j]);
               } //end nested if
               else { //write request since if not 0 it is 1
-                i = Integer.parseInt(tokens[1]);
-                mem[i] = Integer.parseInt(tokens[2]);
+                i = Integer.parseInt(vals[1]);
+                mem[i] = Integer.parseInt(vals[2]);
               } //end nested else
             } //end if
             else //request was an empty string
