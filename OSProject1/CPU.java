@@ -21,10 +21,11 @@ import java.util.Random;
 public class CPU {
 
   //global variables for method simplicity
-  static int USTACK = 1000;
-  static int SYSSTACK = 2000;
-
   static int pc = 0, sp = 1000, ir = 0, ac = 0, x = 0, y = 0; //CPU registers
+
+  static int instrNum = 0; //number of instructions done before timer
+
+  static boolean interrupt = false;
   static boolean mode = true;        //user: true, kernal: false
 
 
@@ -46,16 +47,13 @@ public class CPU {
       InputStream is = proc.getInputStream();
       Scanner memory = new Scanner(is);
 
-      int instrNum = 0;
-      boolean interrupt = false;
-
       while(true) {
         // If a timer interrupt has occured
         if(interrupt == false && instrNum > 0 && (instrNum % timer) == 0) {
           interrupt = true;
           mode = false;
           int tempData = sp;
-          sp = SYSSTACK;
+          sp = 2000; //sp changed to location of system stack
           push(is, os, fetchPW, tempData);
           tempData = pc;
           pc = 1000;
@@ -65,10 +63,8 @@ public class CPU {
         // Starts reading in the instructions from memory
         ir = readMem(memory, is, os, fetchPW, pc);
 
-        if(ir != -1) {
-          executeInstr(memory, is, os, fetchPW, ir, interrupt);
-          instrIncrement(instrNum, interrupt);
-        }
+        if(ir != -1)
+          executeInstr(memory, is, os, fetchPW, ir);
         else
           break;
       } //end while
@@ -128,12 +124,12 @@ public class CPU {
     return ir;
   } //end pop
 
-  private static void instrIncrement(int instrNum, boolean interrupt){
+  private static void instrIncrement(){
     if(interrupt == false) //only increment time to interrupt if there is no current interupt
       instrNum++;
   } //end instrIncrement
 
-  private static void executeInstr(Scanner memory, InputStream is, OutputStream os, PrintWriter fetchPW, int ir, boolean interrupt) {
+  private static void executeInstr(Scanner memory, InputStream is, OutputStream os, PrintWriter fetchPW, int ir) {
     int temp;
     pc++;
 
@@ -238,7 +234,6 @@ public class CPU {
         break;
       case 23:  //  Call addr:            Push return addr onto stack, then jump to the addr
         push(is, os, fetchPW, pc + 1);
-        USTACK = sp;
         pc = readMem(memory, is, os, fetchPW, pc);
         break;
       case 24:  //  Ret:   Pop the return addr from the stack, then jump to the addr
@@ -274,6 +269,7 @@ public class CPU {
         interrupt = false;
         break;
       case 50:  //  End:    End the execution
+        instrIncrement();
         System.exit(0);
         break;
       default:
@@ -281,5 +277,6 @@ public class CPU {
         System.exit(0);
         break;
     } //end switch
+    instrIncrement();
   } //end executeInstr
 } // end CPU
